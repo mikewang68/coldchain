@@ -44,7 +44,8 @@
               <el-tag>{{ getTypeText(scope.row.type) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="specification" label="规格" width="150"></el-table-column>
+          <el-table-column prop="specification" label="等级" width="150"></el-table-column>
+          <el-table-column prop="size" label="包装" width="100"></el-table-column>
           <el-table-column prop="weight" label="重量(吨)" width="100"></el-table-column>
           <el-table-column prop="temperature" label="温度(°C)" width="100"></el-table-column>
           <el-table-column prop="location" label="存储位置" width="120"></el-table-column>
@@ -84,8 +85,20 @@
               <el-option label="冷冻蟹类" value="crab"></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="规格" prop="specification">
-            <el-input v-model="itemForm.specification"></el-input>
+          <el-form-item label="等级" prop="specification">
+            <el-select v-model="itemForm.specification" placeholder="请选择等级">
+              <el-option label="L1级 2000-3000头/kg" value="first"></el-option>
+              <el-option label="L2级 2000-3000头/kg" value="second"></el-option>
+              <el-option label="L3级 2000-3000头/kg" value="third"></el-option>
+              <el-option label="L4级 2000-3000头/kg" value="forth"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="包装" prop="size">
+            <el-select v-model="itemForm.size" placeholder="请选择包装大小">
+              <el-option label="大包装" value="big"></el-option>
+              <el-option label="中包装" value="mid"></el-option>
+              <el-option label="小包装" value="small"></el-option>
+            </el-select>
           </el-form-item>
           <el-form-item label="重量" prop="weight">
             <el-input-number v-model="itemForm.weight" :precision="2" :step="0.1" :min="0"></el-input-number>
@@ -135,6 +148,7 @@ export default {
           name: '阿根廷红虾',
           type: 'shrimp',
           specification: 'L1级 2000-3000头/kg',
+          size: '大包装',
           weight: 25.5,
           temperature: -18,
           location: 'A1',
@@ -143,11 +157,18 @@ export default {
         {
           name: '加拿大北极甜虾',
           type: 'shrimp',
-          specification: 'M2级 3000-4000头/kg',
+          specification: 'L2级 2000-3000头/kg',
+          size: '中包装',
           weight: 18.2,
           temperature: -20,
           location: 'A2',
           inTime: '2024-03-19 15:30:00'
+        },
+        {
+          name: '智利三文鱼',
+          type: 'fish',
+          specification: 'L3级 2000-3000头/kg',
+          size: '小包装',
         }
       ],
       currentPage: 1,
@@ -159,6 +180,7 @@ export default {
         name: '',
         type: '',
         specification: '',
+        size: '',
         weight: 1,
         temperature: -18,
         location: ''
@@ -166,7 +188,8 @@ export default {
       rules: {
         name: [{ required: true, message: '请输入海鲜名称', trigger: 'blur' }],
         type: [{ required: true, message: '请选择海鲜类型', trigger: 'change' }],
-        specification: [{ required: true, message: '请输入规格', trigger: 'blur' }],
+        specification: [{ required: true, message: '请选择等级', trigger: 'blur' }],
+        size: [{ required: true, message: '请选择包装', trigger: 'blur' }],
         weight: [{ required: true, message: '请输入重量', trigger: 'blur' }],
         temperature: [{ required: true, message: '请输入存储温度', trigger: 'blur' }],
         location: [{ required: true, message: '请选择存储位置', trigger: 'change' }]
@@ -200,6 +223,7 @@ export default {
         name: '',
         type: '',
         specification: '',
+        size: '',
         weight: 1,
         temperature: -18,
         location: ''

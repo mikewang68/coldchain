@@ -37,13 +37,19 @@
 
         <el-table :data="goodsList" border style="width: 100%">
           <el-table-column prop="goodsId" label="批次编号" width="120"></el-table-column>
+          <el-table-column prop="deviceId" label="设备标识" width="150">
+            <template #default="scope">
+              <el-tag type="info">{{ scope.row.deviceId || '未绑定' }}</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column prop="name" label="海鲜名称"></el-table-column>
           <el-table-column prop="type" label="类型" width="100">
             <template #default="scope">
               <el-tag>{{ getTypeText(scope.row.type) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="specification" label="规格" width="150"></el-table-column>
+          <el-table-column prop="specification" label="等级" width="150"></el-table-column>
+          <el-table-column prop="size" label="包装" width="100"></el-table-column>
           <el-table-column prop="weight" label="重量(吨)" width="100"></el-table-column>
           <el-table-column prop="temperature" label="温度(°C)" width="100"></el-table-column>
           <el-table-column prop="inTime" label="入库时间" width="180"></el-table-column>
@@ -79,7 +85,21 @@
       <el-dialog :title="dialogTitle" v-model="dialogVisible" width="500px">
         <el-form :model="goodsForm" :rules="rules" ref="goodsForm" label-width="100px">
           <el-form-item label="海鲜名称" prop="name">
-            <el-input v-model="goodsForm.name"></el-input>
+            <el-select v-model="goodsForm.name" placeholder="请选择海鲜名称">
+              <el-option label="阿根廷红虾" value="1"></el-option>
+              <el-option label="加拿大北极甜虾" value="2"></el-option>
+              <el-option label="智利三文鱼" value="3"></el-option>
+              <el-option label="大连扇贝" value="4"></el-option>
+              <el-option label="青岛鲅鱼" value="5"></el-option>
+              <el-option label="波士顿龙虾" value="6"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="设备标识" prop="deviceId">
+            <el-input v-model="goodsForm.deviceId" placeholder="请输入NFC或条形码标识">
+              <template #append>
+                <el-button @click="scanDeviceId">扫描</el-button>
+              </template>
+            </el-input>
           </el-form-item>
           <el-form-item label="海鲜类型" prop="type">
             <el-select v-model="goodsForm.type" placeholder="请选择海鲜类型">
@@ -89,8 +109,20 @@
               <el-option label="冷冻蟹类" value="crab"></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="规格" prop="specification">
-            <el-input v-model="goodsForm.specification" placeholder="例如：L1级 2000-3000头/kg"></el-input>
+          <el-form-item label="等级" prop="specification">
+            <el-select v-model="goodsForm.specification" placeholder="请选择等级">
+              <el-option label="L1级 2000-3000头/kg" value="first"></el-option>
+              <el-option label="L2级 2000-3000头/kg" value="second"></el-option>
+              <el-option label="L3级 2000-3000头/kg" value="third"></el-option>
+              <el-option label="L4级 2000-3000头/kg" value="forth"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="包装" prop="size">
+            <el-select v-model="goodsForm.size" placeholder="请选择包装大小">
+              <el-option label="大包装" value="big"></el-option>
+              <el-option label="中包装" value="mid"></el-option>
+              <el-option label="小包装" value="small"></el-option>
+            </el-select>
           </el-form-item>
           <el-form-item label="重量" prop="weight">
             <el-input-number v-model="goodsForm.weight" :precision="2" :step="0.1" :min="0"></el-input-number>
@@ -138,9 +170,11 @@ export default {
       goodsList: [
         {
           goodsId: 'SF20240320001',
+          deviceId: 'NFC:04:E7:52:B9:D4:80',
           name: '阿根廷红虾',
           type: 'shrimp',
           specification: 'L1级 2000-3000头/kg',
+          size: '大包装',
           weight: 25.5,
           temperature: -18,
           location: 'A1',
@@ -149,9 +183,11 @@ export default {
         },
         {
           goodsId: 'SF20240319002',
+          deviceId: 'NFC:04:E7:52:C1:A3:F5',
           name: '加拿大北极甜虾',
           type: 'shrimp',
-          specification: 'M2级 3000-4000头/kg',
+          specification: 'L2级 2000-3000头/kg',
+          size: '中包装',
           weight: 18.2,
           temperature: -20,
           location: 'A2',
@@ -160,9 +196,11 @@ export default {
         },
         {
           goodsId: 'SF20240318003',
+          deviceId: '978020137962',
           name: '智利三文鱼',
           type: 'fish',
-          specification: '整条 4-5kg/条',
+          specification: 'L3级 2000-3000头/kg',
+          size: '小包装',
           weight: 15.8,
           temperature: -22,
           location: 'B1',
@@ -171,9 +209,11 @@ export default {
         },
         {
           goodsId: 'SF20240317004',
+          deviceId: 'NFC:04:E7:52:D8:E2:B1',
           name: '大连扇贝',
           type: 'shellfish',
-          specification: '10-12cm/只',
+          specification: 'L4级 2000-3000头/kg',
+          size: '大包装',
           weight: 12.5,
           temperature: -18,
           location: 'B2',
@@ -182,9 +222,11 @@ export default {
         },
         {
           goodsId: 'SF20240316005',
+          deviceId: '978159683254',
           name: '帝王蟹',
           type: 'crab',
-          specification: '2-3kg/只',
+          specification: 'L1级 2000-3000头/kg',
+          size: '中包装',
           weight: 8.6,
           temperature: -20,
           location: 'A1',
@@ -193,9 +235,11 @@ export default {
         },
         {
           goodsId: 'SF20240315006',
+          deviceId: 'NFC:04:E7:52:F4:C7:A9',
           name: '青岛鲅鱼',
           type: 'fish',
-          specification: '500-600g/条',
+          specification: 'L2级 2000-3000头/kg',
+          size: '小包装',
           weight: 20.5,
           temperature: -19,
           location: 'A2',
@@ -204,9 +248,11 @@ export default {
         },
         {
           goodsId: 'SF20240314007',
+          deviceId: '978314529687',
           name: '波士顿龙虾',
           type: 'shellfish',
-          specification: '1.5-2kg/只',
+          specification: 'L3级 2000-3000头/kg',
+          size: '大包装',
           weight: 10.2,
           temperature: -20,
           location: 'B1',
@@ -223,14 +269,18 @@ export default {
         name: '',
         type: '',
         specification: '',
+        size: '',
         weight: 1,
         temperature: -18,
-        location: ''
+        location: '',
+        deviceId: ''
       },
       rules: {
         name: [{ required: true, message: '请输入海鲜名称', trigger: 'blur' }],
+        deviceId: [{ required: true, message: '请输入设备标识', trigger: 'blur' }],
         type: [{ required: true, message: '请选择海鲜类型', trigger: 'change' }],
-        specification: [{ required: true, message: '请输入规格', trigger: 'blur' }],
+        specification: [{ required: true, message: '请选择等级', trigger: 'blur' }],
+        size: [{ required: true, message: '请选择包装', trigger: 'blur' }],
         weight: [{ required: true, message: '请输入重量', trigger: 'blur' }],
         temperature: [{ required: true, message: '请输入存储温度', trigger: 'blur' }],
         location: [{ required: true, message: '请选择存储位置', trigger: 'change' }]
@@ -280,9 +330,11 @@ export default {
         name: '',
         type: '',
         specification: '',
+        size: '',
         weight: 1,
         temperature: -18,
-        location: ''
+        location: '',
+        deviceId: ''
       }
     },
     handleOut() {
@@ -319,6 +371,10 @@ export default {
           this.$message.success('操作成功')
         }
       })
+    },
+    scanDeviceId() {
+      // TODO: 实现扫描NFC或条形码的逻辑
+      this.$message.info('请将设备靠近NFC读取器或对准条形码扫描器')
     }
   }
 }

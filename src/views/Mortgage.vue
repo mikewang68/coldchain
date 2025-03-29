@@ -79,9 +79,42 @@
       <!-- 新增抵押对话框 -->
       <el-dialog :title="dialogTitle" v-model="dialogVisible" width="600px">
         <el-form :model="mortgageForm" :rules="rules" ref="mortgageForm" label-width="100px">
-          <el-form-item label="抵押物品" prop="goodsName">
-            <el-input v-model="mortgageForm.goodsName"></el-input>
+          <el-form-item label="抵押物品" prop="goodsList">
+            <el-select
+              v-model="mortgageForm.goodsList"
+              multiple
+              filterable
+              placeholder="请选择抵押物品"
+              style="width: 100%">
+              <el-option
+                v-for="item in availableGoods"
+                :key="item.goodsId"
+                :label="item.name"
+                :value="item.goodsId">
+                <span>{{ item.name }}</span>
+                <span style="float: right; color: #8492a6; font-size: 13px">
+                  {{ item.weight }}吨 | {{ item.type }}
+                </span>
+              </el-option>
+            </el-select>
           </el-form-item>
+
+          <!-- 选中货物的重量编辑区域 -->
+          <el-form-item label="货物重量" v-if="mortgageForm.goodsList.length > 0">
+            <div v-for="goodsId in mortgageForm.goodsList" :key="goodsId" class="goods-weight-item">
+              <span class="goods-name">{{ getGoodsName(goodsId) }}</span>
+              <el-input-number
+                v-model="mortgageForm.goodsWeights[goodsId]"
+                :min="0"
+                :precision="2"
+                :step="0.1"
+                size="small"
+                @change="handleWeightChange">
+                <template #append>吨</template>
+              </el-input-number>
+            </div>
+          </el-form-item>
+
           <el-form-item label="抵押金额" prop="mortgageAmount">
             <el-input-number v-model="mortgageForm.mortgageAmount" :min="1" :precision="2"></el-input-number>
           </el-form-item>
@@ -137,7 +170,8 @@ export default {
       mortgageList: [
         {
           orderId: 'M20240320001',
-          goodsName: '阿根廷红虾',
+          goodsList: ['SF20240320001', 'SF20240319002'],
+          goodsName: '阿根廷红虾、加拿大北极甜虾',
           mortgageAmount: 255.5,
           mortgageDate: '2024-03-20',
           expireDate: '2024-06-20',
@@ -145,7 +179,8 @@ export default {
         },
         {
           orderId: 'M20240319002',
-          goodsName: '加拿大北极甜虾',
+          goodsList: ['SF20240318003'],
+          goodsName: '智利三文鱼',
           mortgageAmount: 182.6,
           mortgageDate: '2024-03-19',
           expireDate: '2024-06-19',
@@ -153,6 +188,7 @@ export default {
         },
         {
           orderId: 'M20240318003',
+          goodsList: ['SF20240317004'],
           goodsName: '大连扇贝',
           mortgageAmount: 125.8,
           mortgageDate: '2024-03-18',
@@ -161,6 +197,7 @@ export default {
         },
         {
           orderId: 'M20240317004',
+          goodsList: ['SF20240314007'],
           goodsName: '波士顿龙虾',
           mortgageAmount: 102.4,
           mortgageDate: '2024-03-17',
@@ -169,7 +206,8 @@ export default {
         },
         {
           orderId: 'M20240316005',
-          goodsName: '智利三文鱼',
+          goodsList: ['SF20240316005'],
+          goodsName: '帝王蟹',
           mortgageAmount: 158.2,
           mortgageDate: '2024-03-16',
           expireDate: '2024-06-16',
@@ -177,7 +215,8 @@ export default {
         },
         {
           orderId: 'M20240315006',
-          goodsName: '帝王蟹',
+          goodsList: ['SF20240315006'],
+          goodsName: '青岛鲅鱼',
           mortgageAmount: 86.5,
           mortgageDate: '2024-03-15',
           expireDate: '2024-06-15',
@@ -185,11 +224,63 @@ export default {
         },
         {
           orderId: 'M20240314007',
-          goodsName: '青岛鲅鱼',
+          goodsList: ['SF20240314007'],
+          goodsName: '波士顿龙虾',
           mortgageAmount: 205.3,
           mortgageDate: '2024-03-14',
           expireDate: '2024-06-14',
           status: 'redeemed'
+        }
+      ],
+      availableGoods: [
+        {
+          goodsId: 'SF20240320001',
+          name: '阿根廷红虾',
+          type: '冷冻虾类',
+          weight: 25.5,
+          status: 'in_stock'
+        },
+        {
+          goodsId: 'SF20240319002',
+          name: '加拿大北极甜虾',
+          type: '冷冻虾类',
+          weight: 18.2,
+          status: 'in_stock'
+        },
+        {
+          goodsId: 'SF20240318003',
+          name: '智利三文鱼',
+          type: '冷冻鱼类',
+          weight: 15.8,
+          status: 'in_stock'
+        },
+        {
+          goodsId: 'SF20240317004',
+          name: '大连扇贝',
+          type: '冷冻贝类',
+          weight: 12.5,
+          status: 'in_stock'
+        },
+        {
+          goodsId: 'SF20240316005',
+          name: '帝王蟹',
+          type: '冷冻蟹类',
+          weight: 8.6,
+          status: 'in_stock'
+        },
+        {
+          goodsId: 'SF20240315006',
+          name: '青岛鲅鱼',
+          type: '冷冻鱼类',
+          weight: 20.5,
+          status: 'in_stock'
+        },
+        {
+          goodsId: 'SF20240314007',
+          name: '波士顿龙虾',
+          type: '冷冻贝类',
+          weight: 10.2,
+          status: 'in_stock'
         }
       ],
       currentPage: 1,
@@ -198,15 +289,17 @@ export default {
       dialogVisible: false,
       dialogTitle: '新增抵押',
       mortgageForm: {
-        goodsName: '',
+        goodsList: [],
+        goodsWeights: {},
         mortgageAmount: 1000,
         mortgagePeriod: 3,
         remark: ''
       },
       rules: {
-        goodsName: [{ required: true, message: '请输入抵押物品名称', trigger: 'blur' }],
+        goodsList: [{ required: true, message: '请选择抵押物品', trigger: 'change' }],
         mortgageAmount: [{ required: true, message: '请输入抵押金额', trigger: 'blur' }],
-        mortgagePeriod: [{ required: true, message: '请输入抵押期限', trigger: 'blur' }]
+        mortgagePeriod: [{ required: true, message: '请输入抵押期限', trigger: 'blur' }],
+        goodsWeights: [{ required: true, message: '请输入货物重量', trigger: 'change' }]
       },
       redeemDialogVisible: false,
       redeemForm: {
@@ -248,7 +341,8 @@ export default {
       this.dialogTitle = '新增抵押'
       this.dialogVisible = true
       this.mortgageForm = {
-        goodsName: '',
+        goodsList: [],
+        goodsWeights: {},
         mortgageAmount: 1000,
         mortgagePeriod: 3,
         remark: ''
@@ -271,9 +365,45 @@ export default {
       this.currentPage = val
       // TODO: 重新加载数据
     },
+    getGoodsName(goodsId) {
+      const goods = this.availableGoods.find(item => item.goodsId === goodsId)
+      return goods ? goods.name : ''
+    },
+    handleWeightChange(value, goodsId) {
+      // 更新货物重量
+      this.mortgageForm.goodsWeights[goodsId] = value
+      // 重新计算总抵押金额
+      this.calculateTotalAmount()
+      // 触发表单验证
+      this.$refs.mortgageForm.validateField('goodsWeights')
+    },
+    calculateTotalAmount() {
+      // 根据货物重量计算总金额（示例：每吨10000元）
+      const totalWeight = Object.values(this.mortgageForm.goodsWeights).reduce((sum, weight) => sum + weight, 0)
+      this.mortgageForm.mortgageAmount = totalWeight * 10000
+    },
     submitForm() {
+      // 验证所有选中货物是否都已设置重量
+      const hasEmptyWeight = this.mortgageForm.goodsList.some(goodsId => {
+        return !this.mortgageForm.goodsWeights[goodsId] || this.mortgageForm.goodsWeights[goodsId] <= 0
+      })
+
+      if (hasEmptyWeight) {
+        this.$message.error('请为所有货物设置重量')
+        return
+      }
+
       this.$refs.mortgageForm.validate((valid) => {
         if (valid) {
+          // 获取选中货物的名称和重量列表
+          const selectedGoods = this.mortgageForm.goodsList.map(goodsId => {
+            const goods = this.availableGoods.find(item => item.goodsId === goodsId)
+            return {
+              name: goods ? goods.name : '',
+              weight: this.mortgageForm.goodsWeights[goodsId] || 0
+            }
+          }).filter(item => item.name)
+
           // TODO: 实现提交逻辑
           this.dialogVisible = false
           this.$message.success('操作成功')
@@ -424,5 +554,39 @@ export default {
   flex: 1;
   overflow-y: auto;
   max-height: calc(90vh - 150px);
+}
+
+/* 货物重量编辑区域样式 */
+.goods-weight-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 8px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.goods-weight-item:last-child {
+  margin-bottom: 0;
+}
+
+.goods-name {
+  flex: 1;
+  margin-right: 10px;
+  color: #606266;
+}
+
+:deep(.el-input-number) {
+  width: 150px;
+}
+
+:deep(.el-input-number .el-input__inner) {
+  text-align: right;
+}
+
+:deep(.el-input-number .el-input-group__append) {
+  padding: 0 8px;
+  background-color: #f5f7fa;
+  color: #606266;
 }
 </style>
