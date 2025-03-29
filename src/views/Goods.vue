@@ -1,27 +1,26 @@
 <template>
-  <div class="items-page">
+  <div class="goods-page">
     <nav-bar></nav-bar>
-    <div class="items-container">
+    <div class="goods-container">
       <el-card>
         <div class="filter-container">
           <el-form :inline="true" :model="filterForm">
-            <el-form-item label="品类名称">
-              <el-input v-model="filterForm.name" placeholder="请输入品类名称"></el-input>
+            <el-form-item label="批次编号">
+              <el-input v-model="filterForm.goodsId" placeholder="请输入批次编号"></el-input>
             </el-form-item>
-            <el-form-item label="品类类型">
-              <el-select v-model="filterForm.type" placeholder="请选择品类类型">
+            <el-form-item label="海鲜类型">
+              <el-select v-model="filterForm.type" placeholder="请选择海鲜类型">
                 <el-option label="冷冻虾类" value="shrimp"></el-option>
                 <el-option label="冷冻鱼类" value="fish"></el-option>
                 <el-option label="冷冻贝类" value="shellfish"></el-option>
                 <el-option label="冷冻蟹类" value="crab"></el-option>
               </el-select>
             </el-form-item>
-            <el-form-item label="存储位置">
-              <el-select v-model="filterForm.location" placeholder="请选择存储位置">
-                <el-option label="A区-1号冷库" value="A1"></el-option>
-                <el-option label="A区-2号冷库" value="A2"></el-option>
-                <el-option label="B区-1号冷库" value="B1"></el-option>
-                <el-option label="B区-2号冷库" value="B2"></el-option>
+            <el-form-item label="状态">
+              <el-select v-model="filterForm.status" placeholder="请选择状态">
+                <el-option label="在库" value="in_stock"></el-option>
+                <el-option label="已出库" value="out_stock"></el-option>
+                <el-option label="抵押中" value="mortgaged"></el-option>
               </el-select>
             </el-form-item>
             <el-form-item>
@@ -33,11 +32,11 @@
 
         <div class="operation-container">
           <el-button type="primary" @click="handleAdd">新增入库</el-button>
-          <el-button type="success" @click="handleBatchAdd">批量入库</el-button>
+          <el-button type="warning" @click="handleOut">货物出库</el-button>
         </div>
 
-        <el-table :data="itemsList" border style="width: 100%">
-          <el-table-column type="selection" width="55"></el-table-column>
+        <el-table :data="goodsList" border style="width: 100%">
+          <el-table-column prop="goodsId" label="批次编号" width="120"></el-table-column>
           <el-table-column prop="name" label="海鲜名称"></el-table-column>
           <el-table-column prop="type" label="类型" width="100">
             <template #default="scope">
@@ -47,9 +46,15 @@
           <el-table-column prop="specification" label="规格" width="150"></el-table-column>
           <el-table-column prop="weight" label="重量(吨)" width="100"></el-table-column>
           <el-table-column prop="temperature" label="温度(°C)" width="100"></el-table-column>
-          <el-table-column prop="location" label="存储位置" width="120"></el-table-column>
           <el-table-column prop="inTime" label="入库时间" width="180"></el-table-column>
-          <el-table-column label="操作" width="150">
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="scope">
+              <el-tag :type="getStatusType(scope.row.status)">
+                {{ getStatusText(scope.row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200">
             <template #default="scope">
               <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
               <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
@@ -72,12 +77,12 @@
 
       <!-- 新增/编辑对话框 -->
       <el-dialog :title="dialogTitle" v-model="dialogVisible" width="500px">
-        <el-form :model="itemForm" :rules="rules" ref="itemForm" label-width="100px">
+        <el-form :model="goodsForm" :rules="rules" ref="goodsForm" label-width="100px">
           <el-form-item label="海鲜名称" prop="name">
-            <el-input v-model="itemForm.name"></el-input>
+            <el-input v-model="goodsForm.name"></el-input>
           </el-form-item>
           <el-form-item label="海鲜类型" prop="type">
-            <el-select v-model="itemForm.type" placeholder="请选择海鲜类型">
+            <el-select v-model="goodsForm.type" placeholder="请选择海鲜类型">
               <el-option label="冷冻虾类" value="shrimp"></el-option>
               <el-option label="冷冻鱼类" value="fish"></el-option>
               <el-option label="冷冻贝类" value="shellfish"></el-option>
@@ -85,18 +90,18 @@
             </el-select>
           </el-form-item>
           <el-form-item label="规格" prop="specification">
-            <el-input v-model="itemForm.specification"></el-input>
+            <el-input v-model="goodsForm.specification" placeholder="例如：L1级 2000-3000头/kg"></el-input>
           </el-form-item>
           <el-form-item label="重量" prop="weight">
-            <el-input-number v-model="itemForm.weight" :precision="2" :step="0.1" :min="0"></el-input-number>
+            <el-input-number v-model="goodsForm.weight" :precision="2" :step="0.1" :min="0"></el-input-number>
             <span class="unit">吨</span>
           </el-form-item>
           <el-form-item label="存储温度" prop="temperature">
-            <el-input-number v-model="itemForm.temperature" :precision="1" :step="0.5" :max="0"></el-input-number>
+            <el-input-number v-model="goodsForm.temperature" :precision="1" :step="0.5" :max="0"></el-input-number>
             <span class="unit">°C</span>
           </el-form-item>
           <el-form-item label="存储位置" prop="location">
-            <el-select v-model="itemForm.location" placeholder="请选择存储位置">
+            <el-select v-model="goodsForm.location" placeholder="请选择存储位置">
               <el-option label="A区-1号冷库" value="A1"></el-option>
               <el-option label="A区-2号冷库" value="A2"></el-option>
               <el-option label="B区-1号冷库" value="B1"></el-option>
@@ -119,35 +124,94 @@
 import NavBar from '../components/Layout/NavBar.vue'
 
 export default {
-  name: 'ItemsView',
+  name: 'GoodsView',
   components: {
     NavBar
   },
   data() {
     return {
       filterForm: {
-        name: '',
+        goodsId: '',
         type: '',
-        location: ''
+        status: ''
       },
-      itemsList: [
+      goodsList: [
         {
+          goodsId: 'SF20240320001',
           name: '阿根廷红虾',
           type: 'shrimp',
           specification: 'L1级 2000-3000头/kg',
           weight: 25.5,
           temperature: -18,
           location: 'A1',
-          inTime: '2024-03-20 10:00:00'
+          inTime: '2024-03-20 10:00:00',
+          status: 'in_stock'
         },
         {
+          goodsId: 'SF20240319002',
           name: '加拿大北极甜虾',
           type: 'shrimp',
           specification: 'M2级 3000-4000头/kg',
           weight: 18.2,
           temperature: -20,
           location: 'A2',
-          inTime: '2024-03-19 15:30:00'
+          inTime: '2024-03-19 15:30:00',
+          status: 'mortgaged'
+        },
+        {
+          goodsId: 'SF20240318003',
+          name: '智利三文鱼',
+          type: 'fish',
+          specification: '整条 4-5kg/条',
+          weight: 15.8,
+          temperature: -22,
+          location: 'B1',
+          inTime: '2024-03-18 09:15:00',
+          status: 'in_stock'
+        },
+        {
+          goodsId: 'SF20240317004',
+          name: '大连扇贝',
+          type: 'shellfish',
+          specification: '10-12cm/只',
+          weight: 12.5,
+          temperature: -18,
+          location: 'B2',
+          inTime: '2024-03-17 14:20:00',
+          status: 'mortgaged'
+        },
+        {
+          goodsId: 'SF20240316005',
+          name: '帝王蟹',
+          type: 'crab',
+          specification: '2-3kg/只',
+          weight: 8.6,
+          temperature: -20,
+          location: 'A1',
+          inTime: '2024-03-16 11:40:00',
+          status: 'in_stock'
+        },
+        {
+          goodsId: 'SF20240315006',
+          name: '青岛鲅鱼',
+          type: 'fish',
+          specification: '500-600g/条',
+          weight: 20.5,
+          temperature: -19,
+          location: 'A2',
+          inTime: '2024-03-15 16:50:00',
+          status: 'out_stock'
+        },
+        {
+          goodsId: 'SF20240314007',
+          name: '波士顿龙虾',
+          type: 'shellfish',
+          specification: '1.5-2kg/只',
+          weight: 10.2,
+          temperature: -20,
+          location: 'B1',
+          inTime: '2024-03-14 13:25:00',
+          status: 'mortgaged'
         }
       ],
       currentPage: 1,
@@ -155,7 +219,7 @@ export default {
       total: 100,
       dialogVisible: false,
       dialogTitle: '新增入库',
-      itemForm: {
+      goodsForm: {
         name: '',
         type: '',
         specification: '',
@@ -183,20 +247,36 @@ export default {
       }
       return types[type] || type
     },
+    getStatusType(status) {
+      const types = {
+        normal: 'success',
+        warning: 'warning',
+        danger: 'danger'
+      }
+      return types[status] || 'info'
+    },
+    getStatusText(status) {
+      const texts = {
+        in_stock: '在库',
+        out_stock: '已出库',
+        mortgaged: '抵押中'
+      }
+      return texts[status] || status
+    },
     handleSearch() {
       // TODO: 实现搜索逻辑
     },
     resetForm() {
       this.filterForm = {
-        name: '',
+        goodsId: '',
         type: '',
-        location: ''
+        status: ''
       }
     },
     handleAdd() {
       this.dialogTitle = '新增入库'
       this.dialogVisible = true
-      this.itemForm = {
+      this.goodsForm = {
         name: '',
         type: '',
         specification: '',
@@ -205,16 +285,16 @@ export default {
         location: ''
       }
     },
-    handleBatchAdd() {
-      // TODO: 实现批量入库逻辑
+    handleOut() {
+      // TODO: 实现出库逻辑
     },
     handleEdit(row) {
-      this.dialogTitle = '编辑信息'
+      this.dialogTitle = '编辑货物'
       this.dialogVisible = true
-      this.itemForm = { ...row }
+      this.goodsForm = { ...row }
     },
     handleDelete(row) {
-      this.$confirm('确认删除该记录?', '提示', {
+      this.$confirm('确认删除该货物记录?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
@@ -232,7 +312,7 @@ export default {
       // TODO: 重新加载数据
     },
     submitForm() {
-      this.$refs.itemForm.validate((valid) => {
+      this.$refs.goodsForm.validate((valid) => {
         if (valid) {
           // TODO: 实现提交逻辑
           this.dialogVisible = false
@@ -245,13 +325,13 @@ export default {
 </script>
 
 <style scoped>
-.items-page {
+.goods-page {
   width: 100%;
   height: 100vh;
   overflow: hidden;
 }
 
-.items-container {
+.goods-container {
   position: fixed;
   top: 60px;
   left: 0;
@@ -313,6 +393,10 @@ export default {
 .unit {
   margin-left: 8px;
   color: #666;
+}
+
+.el-tag {
+  margin-right: 8px;
 }
 
 /* 响应式布局调整 */

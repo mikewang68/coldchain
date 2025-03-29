@@ -1,226 +1,297 @@
 <template>
-  <div class="orders-container">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>订单管理</span>
-          <el-button type="primary" @click="showAddDialog">创建订单</el-button>
+  <div class="orders-page">
+    <nav-bar></nav-bar>
+    <div class="orders-container">
+      <el-card class="orders-card">
+        <!-- 搜索过滤区域 -->
+        <div class="filter-container">
+          <el-form :inline="true" :model="filterForm" class="form-inline">
+            <el-form-item label="批次编号">
+              <el-input v-model="filterForm.orderId" placeholder="请输入批次编号" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="海鲜类型">
+              <el-select v-model="filterForm.seafoodType" placeholder="请选择" clearable>
+                <el-option label="阿根廷红虾" value="阿根廷红虾"></el-option>
+                <el-option label="加拿大北极甜虾" value="加拿大北极甜虾"></el-option>
+                <el-option label="智利三文鱼" value="智利三文鱼"></el-option>
+                <el-option label="波士顿龙虾" value="波士顿龙虾"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select v-model="filterForm.status" placeholder="请选择" clearable>
+                <el-option label="待审核" value="待审核"></el-option>
+                <el-option label="已审核" value="已审核"></el-option>
+                <el-option label="已出库" value="已出库"></el-option>
+                <el-option label="已取消" value="已取消"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="handleSearch">查询</el-button>
+              <el-button @click="resetForm">重置</el-button>
+            </el-form-item>
+          </el-form>
         </div>
-      </template>
 
-      <el-table :data="orders" style="width: 100%">
-        <el-table-column prop="order_number" label="订单编号" />
-        <el-table-column prop="item.item_number" label="物品编号" />
-        <el-table-column prop="item.department" label="所属单位" />
-        <el-table-column prop="status" label="状态">
-          <template #default="scope">
-            <el-tag :type="getStatusType(scope.row.status)">
-              {{ getStatusText(scope.row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="receiver" label="签收人" />
-        <el-table-column prop="sign_time" label="签收时间">
-          <template #default="scope">
-            {{ formatDate(scope.row.sign_time) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作">
-          <template #default="scope">
-            <el-button-group>
-              <el-button type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-              <el-button type="success" @click="handleSign(scope.row)">签收</el-button>
-              <el-button type="danger" @click="handleDelete(scope.row)">删除</el-button>
-            </el-button-group>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+        <!-- 操作按钮区域 -->
+        <div class="operation-container">
+          <el-button type="primary" @click="handleApply">申请解押</el-button>
+          <el-button type="success" @click="handleExport">导出记录</el-button>
+        </div>
 
-    <!-- 添加/编辑订单对话框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogType === 'add' ? '创建订单' : '编辑订单'"
-      width="500px"
-    >
-      <el-form :model="form" label-width="100px">
-        <el-form-item label="物品">
-          <el-select v-model="form.item_id" placeholder="请选择物品">
-            <el-option
-              v-for="item in availableItems"
-              :key="item.id"
-              :label="item.item_number"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="form.status">
-            <el-option label="待签收" value="pending" />
-            <el-option label="已签收" value="signed" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="签收人">
-          <el-input v-model="form.receiver" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+        <!-- 表格区域 -->
+        <el-table :data="ordersList" style="width: 100%" border>
+          <el-table-column prop="orderId" label="批次编号" width="180"></el-table-column>
+          <el-table-column prop="seafoodName" label="海鲜名称" width="150"></el-table-column>
+          <el-table-column prop="weight" label="重量(吨)" width="100"></el-table-column>
+          <el-table-column prop="mortgageAmount" label="抵押金额(万元)" width="150"></el-table-column>
+          <el-table-column prop="applyDate" label="申请日期" width="180"></el-table-column>
+          <el-table-column prop="releaseDate" label="解押日期" width="180"></el-table-column>
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="scope">
+              <el-tag :type="getStatusType(scope.row.status)">{{ scope.row.status }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" fixed="right" width="200">
+            <template #default="scope">
+              <el-button type="text" size="small" @click="handleDetail(scope.row)">详情</el-button>
+              <el-button type="text" size="small" @click="handleEdit(scope.row)" v-if="scope.row.status === '待审核'">编辑</el-button>
+              <el-button type="text" size="small" @click="handleCancel(scope.row)" v-if="scope.row.status === '待审核'">取消</el-button>
+              <el-button type="text" size="small" @click="handleRelease(scope.row)" v-if="scope.row.status === '已审核'">出库</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 分页区域 -->
+        <div class="pagination-container">
+          <el-pagination
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            :page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange">
+          </el-pagination>
+        </div>
+      </el-card>
+    </div>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import axios from 'axios'
+<script>
+import NavBar from '../components/Layout/NavBar.vue'
 
-const orders = ref([])
-const availableItems = ref([])
-const dialogVisible = ref(false)
-const dialogType = ref('add')
-const form = ref({
-  item_id: '',
-  status: 'pending',
-  receiver: ''
-})
-
-const API_BASE_URL = 'http://localhost:8080/api'
-
-// 获取订单列表
-const fetchOrders = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/orders`)
-    orders.value = response.data
-  } catch (error) {
-    ElMessage.error('获取订单列表失败')
-  }
-}
-
-// 获取可用物品列表
-const fetchAvailableItems = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/items`)
-    availableItems.value = response.data
-  } catch (error) {
-    ElMessage.error('获取物品列表失败')
-  }
-}
-
-// 显示添加对话框
-const showAddDialog = () => {
-  dialogType.value = 'add'
-  form.value = {
-    item_id: '',
-    status: 'pending',
-    receiver: ''
-  }
-  dialogVisible.value = true
-}
-
-// 处理编辑
-const handleEdit = (row) => {
-  dialogType.value = 'edit'
-  form.value = { ...row }
-  dialogVisible.value = true
-}
-
-// 处理签收
-const handleSign = async (row) => {
-  try {
-    await axios.put(`${API_BASE_URL}/orders/${row.id}`, {
-      ...row,
-      status: 'signed',
-      sign_time: new Date().toISOString()
-    })
-    ElMessage.success('签收成功')
-    fetchOrders()
-  } catch (error) {
-    ElMessage.error('签收失败')
-  }
-}
-
-// 处理删除
-const handleDelete = (row) => {
-  ElMessageBox.confirm('确定要删除该订单吗？', '提示', {
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await axios.delete(`${API_BASE_URL}/orders/${row.id}`)
-      ElMessage.success('删除成功')
-      fetchOrders()
-    } catch (error) {
-      ElMessage.error('删除失败')
+export default {
+  name: 'OrdersView',
+  components: {
+    NavBar
+  },
+  data() {
+    return {
+      filterForm: {
+        orderId: '',
+        seafoodType: '',
+        status: ''
+      },
+      ordersList: [
+        {
+          orderId: 'SF20240320001',
+          seafoodName: '阿根廷红虾',
+          weight: 25.5,
+          mortgageAmount: 255,
+          applyDate: '2024-03-20 10:00:00',
+          releaseDate: '',
+          status: '待审核'
+        },
+        {
+          orderId: 'SF20240319002',
+          seafoodName: '加拿大北极甜虾',
+          weight: 18.2,
+          mortgageAmount: 182,
+          applyDate: '2024-03-19 15:30:00',
+          releaseDate: '2024-03-19 16:30:00',
+          status: '已审核'
+        },
+        {
+          orderId: 'SF20240318003',
+          seafoodName: '智利三文鱼',
+          weight: 15.8,
+          mortgageAmount: 158,
+          applyDate: '2024-03-18 09:15:00',
+          releaseDate: '2024-03-18 14:20:00',
+          status: '已出库'
+        },
+        {
+          orderId: 'SF20240317004',
+          seafoodName: '波士顿龙虾',
+          weight: 12.5,
+          mortgageAmount: 125,
+          applyDate: '2024-03-17 14:20:00',
+          releaseDate: '',
+          status: '已取消'
+        }
+      ],
+      total: 100,
+      pageSize: 10,
+      currentPage: 1
     }
-  })
-}
-
-// 处理表单提交
-const handleSubmit = async () => {
-  try {
-    if (dialogType.value === 'add') {
-      await axios.post(`${API_BASE_URL}/orders`, form.value)
-      ElMessage.success('创建成功')
-    } else {
-      await axios.put(`${API_BASE_URL}/orders/${form.value.id}`, form.value)
-      ElMessage.success('更新成功')
+  },
+  methods: {
+    getStatusType(status) {
+      const types = {
+        pending: 'warning',
+        approved: 'success',
+        rejected: 'danger'
+      }
+      return types[status] || 'info'
+    },
+    handleSearch() {
+      // 实现搜索逻辑
+      console.log('搜索条件：', this.filterForm)
+    },
+    resetForm() {
+      this.filterForm = {
+        orderId: '',
+        seafoodType: '',
+        status: ''
+      }
+    },
+    handleApply() {
+      // 实现申请解押逻辑
+      console.log('申请解押')
+    },
+    handleExport() {
+      // 实现导出记录逻辑
+      console.log('导出记录')
+    },
+    handleDetail(row) {
+      // 实现查看详情逻辑
+      console.log('查看详情：', row)
+    },
+    handleEdit(row) {
+      // 实现编辑逻辑
+      console.log('编辑：', row)
+    },
+    handleCancel(row) {
+      // 实现取消逻辑
+      console.log('取消：', row)
+    },
+    handleRelease(row) {
+      // 实现出库逻辑
+      console.log('出库：', row)
+    },
+    handleSizeChange(val) {
+      this.pageSize = val
+      // 重新加载数据
+    },
+    handleCurrentChange(val) {
+      this.currentPage = val
+      // 重新加载数据
     }
-    dialogVisible.value = false
-    fetchOrders()
-  } catch (error) {
-    ElMessage.error(dialogType.value === 'add' ? '创建失败' : '更新失败')
   }
 }
-
-// 获取状态类型
-const getStatusType = (status) => {
-  const types = {
-    pending: 'warning',
-    signed: 'success'
-  }
-  return types[status] || 'info'
-}
-
-// 获取状态文本
-const getStatusText = (status) => {
-  const texts = {
-    pending: '待签收',
-    signed: '已签收'
-  }
-  return texts[status] || status
-}
-
-// 格式化日期
-const formatDate = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleString()
-}
-
-onMounted(() => {
-  fetchOrders()
-  fetchAvailableItems()
-})
 </script>
 
 <style scoped>
+.orders-page {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
 .orders-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background-color: #f0f2f5;
+  overflow: hidden;
 }
 
-.card-header {
+.orders-card {
+  height: 100%;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  border-radius: 0;
+  margin: 0;
 }
 
-.dialog-footer {
+:deep(.el-card__body) {
+  flex: 1;
+  padding: 15px;
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+  flex-direction: column;
+  overflow: hidden;
 }
-</style> 
+
+.filter-container {
+  margin-bottom: 15px;
+  flex-shrink: 0;
+  padding: 0 5px;
+}
+
+.operation-container {
+  margin-bottom: 15px;
+  flex-shrink: 0;
+  padding: 0 5px;
+}
+
+.el-table {
+  flex: 1;
+  overflow: auto;
+}
+
+.pagination-container {
+  margin-top: 15px;
+  text-align: right;
+  flex-shrink: 0;
+  padding: 0 5px;
+}
+
+/* 响应式布局 */
+@media screen and (max-width: 1366px) {
+  :deep(.el-card__body) {
+    padding: 10px;
+  }
+
+  .el-table {
+    font-size: 13px;
+  }
+
+  .el-button--mini {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+@media screen and (min-width: 1920px) {
+  :deep(.el-card__body) {
+    padding: 20px;
+  }
+
+  .el-table {
+    font-size: 15px;
+  }
+}
+
+/* 表格滚动条样式 */
+.el-table__body-wrapper::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.el-table__body-wrapper::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+.el-table__body-wrapper::-webkit-scrollbar-track {
+  background: #f5f5f5;
+}
+</style>
