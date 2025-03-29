@@ -1,99 +1,132 @@
-<script setup>
-import { ElContainer, ElHeader, ElMain, ElMenu, ElMenuItem } from 'element-plus'
-import { House, Box, List } from '@element-plus/icons-vue'
+<script>
+export default {
+  name: 'App'
+}
 </script>
 
 <template>
-  <el-container class="layout-container">
-    <el-header class="main-header">
-      <div class="header-content">
-        <div class="logo">
-          <h1>物品管理系统</h1>
-        </div>
-        <el-menu mode="horizontal" router class="main-menu">
-          <el-menu-item index="/">
-            <el-icon><House /></el-icon>
-            首页
-          </el-menu-item>
-          <el-menu-item index="/items">
-            <el-icon><Box /></el-icon>
-            物品管理
-          </el-menu-item>
-          <el-menu-item index="/orders">
-            <el-icon><List /></el-icon>
-            订单管理
-          </el-menu-item>
-        </el-menu>
-      </div>
-    </el-header>
-    <el-main class="main-content">
-      <router-view></router-view>
-    </el-main>
-  </el-container>
+  <router-view></router-view>
 </template>
 
-<style scoped>
-.layout-container {
-  min-height: 100vh;
-  background-color: #f5f7fa;
-}
-
-.main-header {
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+<style>
+html, body {
+  margin: 0;
   padding: 0;
-  position: fixed;
+  height: 100%;
   width: 100%;
-  z-index: 1000;
+  overflow-x: hidden;
 }
 
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #2c3e50;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.nav-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: #409EFF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-content {
+  height: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 100%;
-  padding: 0 20px;
-}
-
-.logo h1 {
+  padding: 0;
   margin: 0;
-  font-size: 24px;
-  color: #409eff;
-  font-weight: 600;
 }
 
-.main-menu {
-  border-bottom: none;
-  background-color: transparent;
+.nav-logo {
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+  padding-left: 20px;
 }
 
-.main-menu :deep(.el-menu-item) {
+.nav-menu {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  padding-left: 40px;
+}
+
+.nav-menu li {
+  padding: 0 15px;
+}
+
+.nav-menu a {
+  color: #fff;
+  text-decoration: none;
   font-size: 16px;
-  height: 60px;
-  line-height: 60px;
-  padding: 0 20px;
 }
 
-.main-menu :deep(.el-menu-item.is-active) {
-  color: #409eff;
-  border-bottom: 2px solid #409eff;
+.nav-menu a:hover,
+.nav-menu a.router-link-active {
+  color: #e6f1ff;
+  font-weight: bold;
 }
 
-.main-menu :deep(.el-menu-item:hover) {
-  background-color: #ecf5ff;
+.nav-user {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
 }
 
-.main-content {
-  padding-top: 80px;
-  max-width: 1200px;
-  margin: 0 auto;
-  min-height: calc(100vh - 60px);
+.nav-user .el-button {
+  margin-left: 15px;
+  background: transparent;
+  border: 1px solid #fff;
+  color: #fff;
 }
 
-:deep(.el-menu-item .el-icon) {
-  margin-right: 5px;
-  font-size: 18px;
+.nav-user .el-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media screen and (max-width: 768px) {
+  .nav-logo {
+    padding-left: 10px;
+  }
+
+  .nav-menu {
+    display: none;
+  }
+
+  .nav-user {
+    right: 10px;
+  }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
 }
 </style>
