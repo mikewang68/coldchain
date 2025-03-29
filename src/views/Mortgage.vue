@@ -103,15 +103,19 @@
           <el-form-item label="货物重量" v-if="mortgageForm.goodsList.length > 0">
             <div v-for="goodsId in mortgageForm.goodsList" :key="goodsId" class="goods-weight-item">
               <span class="goods-name">{{ getGoodsName(goodsId) }}</span>
-              <el-input-number
-                v-model="mortgageForm.goodsWeights[goodsId]"
-                :min="0"
-                :precision="2"
-                :step="0.1"
-                size="small"
-                @change="handleWeightChange">
-                <template #append>吨</template>
-              </el-input-number>
+              <div class="weight-input-wrapper">
+                <el-input-number
+                  v-model="mortgageForm.goodsWeights[goodsId]"
+                  :min="0"
+                  :max="getGoodsMaxWeight(goodsId)"
+                  :precision="2"
+                  :step="0.1"
+                  size="small"
+                  @change="handleWeightChange">
+                  <template #append>吨</template>
+                </el-input-number>
+                <span class="max-weight">最大: {{ getGoodsMaxWeight(goodsId) }}吨</span>
+              </div>
             </div>
           </el-form-item>
 
@@ -369,6 +373,10 @@ export default {
       const goods = this.availableGoods.find(item => item.goodsId === goodsId)
       return goods ? goods.name : ''
     },
+    getGoodsMaxWeight(goodsId) {
+      const goods = this.availableGoods.find(item => item.goodsId === goodsId)
+      return goods ? goods.weight : 0
+    },
     handleWeightChange(value, goodsId) {
       // 更新货物重量
       this.mortgageForm.goodsWeights[goodsId] = value
@@ -574,6 +582,17 @@ export default {
   flex: 1;
   margin-right: 10px;
   color: #606266;
+}
+
+.weight-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.max-weight {
+  color: #909399;
+  font-size: 13px;
 }
 
 :deep(.el-input-number) {
