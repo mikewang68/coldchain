@@ -40,14 +40,14 @@ type ContractCa struct {
 var MyPrivateKey string = "priSPKkpuYHiwQ886GdRrb9s6TbCmTqYdQdKEYo1X6njuSiMNP"
 var SDK_URL string = "http://test.bifcore.bitfactory.cn"
 var MyAccountAddress string = "did:bid:efPLdVAy6AN5wVgViFzfeNZ5yauq7hFs"
-var ContractAddress = "did:bid:efS882eonf4Ng5eHJmDA2Z61qnJwrBR7"
+var ContractAddress = "did:bid:efEtJd3pFyD2tSBmpPEkQNzEj9m9jGMF"
 
 // 创建中文时间格式模板
 const chineseTimeLayout = "2006年1月2日15时04分"
 
 func GenerateCall(s models.Goods, cid string) ContractCall {
 	return ContractCall{
-		Function: "addItem(uint256,string)",
+		Function: "addProduct(string,string)",
 		Args: fmt.Sprintf("%s,%s",
 			s.ID,
 			cid,
@@ -93,7 +93,6 @@ func uploadProduct(client *rpc.HttpApi, product models.Goods) (cid.Cid, error) {
 
 	// 打印原始 JSON 和十六进制格式
 	fmt.Printf("=== 原始 JSON 数据 ===\n%s\n", string(jsonData))
-	fmt.Printf("=== 十六进制格式 ===\n%x\n", jsonData)
 
 	// 直接上传文件（不再包装为目录）
 	fileNode := files.NewBytesFile(jsonData)
@@ -186,19 +185,28 @@ func CreateGoods(c *gin.Context) {
 	goods.InTime = time.Now().Format(chineseTimeLayout)
 	goods.Status = "instock"
 
-	// // 连接本地 IPFS 节点（默认端口 5001）
-	// client, err := rpc.NewLocalApi()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// cid, err := uploadProduct(client, goods)
-	// if err != nil {
-	// 	panic(fmt.Sprintf("上传失败: %v", err))
-	// }
-	// fmt.Printf("上传成功，CID: %s\n", cid.String())
-
 	fmt.Println(goods)
+
+	// 连接本地 IPFS 节点（默认端口 5001）
+	client, err := rpc.NewLocalApi()
+	if err != nil {
+		panic(err)
+	}
+
+	cid, err := uploadProduct(client, goods)
+	if err != nil {
+		panic(fmt.Sprintf("上传失败: %v", err))
+	}
+
+	fmt.Printf("上传成功，CID: %s\n", cid.String())
+	cidStr := cid.String()
+
+	// 上链操作
+	contractCall := GenerateCall(goods, cidStr)
+	jsonBytes, _ := json.Marshal(contractCall)
+	input := string(jsonBytes)
+	fmt.Println(input)
+	ContractCalls(MyAccountAddress, ContractAddress, MyPrivateKey, input)
 
 	c.JSON(http.StatusOK, goods)
 }
