@@ -66,8 +66,16 @@ var SDK_URL string = "http://test.bifcore.bitfactory.cn"
 var MyAccountAddress string = "did:bid:efPLdVAy6AN5wVgViFzfeNZ5yauq7hFs"
 var ContractAddress = "did:bid:efZu2WS66T4CTp7ZGb5fE925jztapZ4y"
 
+// 全局 IPFS Shell 实例
+var ipfsShell *shell.Shell
+
 // 创建中文时间格式模板
 const chineseTimeLayout = "2006年1月2日15时04分"
+
+func init() {
+	// 初始化全局实例（程序启动时执行一次）
+	ipfsShell = shell.NewShell("localhost:5001")
+}
 
 func GenerateCall(s models.Goods, cid string) ContractCall {
 	return ContractCall{
@@ -170,7 +178,7 @@ func QuerycontrctGoodslist(senderAddress string, contractAddress string) []strin
 
 }
 
-func uploadProduct(sh *shell.Shell, product models.Goods) (cid.Cid, error) {
+func uploadProduct(product models.Goods) (cid.Cid, error) {
 	// 直接序列化 JSON
 	jsonData, err := json.Marshal(product)
 	if err != nil {
@@ -182,7 +190,7 @@ func uploadProduct(sh *shell.Shell, product models.Goods) (cid.Cid, error) {
 
 	// 上传到 IPFS
 	reader := bytes.NewReader(jsonData)
-	cidStr, err := sh.Add(reader)
+	cidStr, err := ipfsShell.Add(reader)
 	if err != nil {
 		return cid.Undef, fmt.Errorf("IPFS add failed: %w", err)
 	}
@@ -196,10 +204,10 @@ func uploadProduct(sh *shell.Shell, product models.Goods) (cid.Cid, error) {
 	return parsedCID, nil
 }
 
-func queryProduct(sh *shell.Shell, cidStr string) (models.Goods, error) {
+func queryProduct(cidStr string) (models.Goods, error) {
 	var zeroGoods models.Goods
 
-	reader, err := sh.Cat(cidStr)
+	reader, err := ipfsShell.Cat(cidStr)
 	if err != nil {
 		return zeroGoods, fmt.Errorf("IPFS read failed: %w", err)
 	}
@@ -221,14 +229,14 @@ func queryProduct(sh *shell.Shell, cidStr string) (models.Goods, error) {
 	return product, nil
 }
 
-func QueryProducts(sh *shell.Shell, cidStrs []string) ([]models.Goods, error) {
+func QueryProducts(cidStrs []string) ([]models.Goods, error) {
 	// 初始化返回结构和错误收集
 	results := make([]models.Goods, 0, len(cidStrs))
 	var errs []error
 
 	// 顺序处理每个 CID
 	for _, cid := range cidStrs {
-		product, err := queryProduct(sh, cid)
+		product, err := queryProduct(cid)
 		if err != nil {
 			// 错误包装并收集，包含原始 CID 信息
 			errs = append(errs, fmt.Errorf("cid [%s] error: %w", cid, err))
@@ -252,11 +260,9 @@ func GetGoodsList(c *gin.Context) {
 		return
 	}
 
-	sh := shell.NewShell("localhost:5001")
-
 	cidlist := QuerycontrctGoodslist(MyAccountAddress, ContractAddress)
 
-	virtualGoodsList, _ := QueryProducts(sh, cidlist)
+	virtualGoodsList, _ := QueryProducts(cidlist)
 
 	// 过滤数据
 	filteredList := make([]models.Goods, 0)
@@ -296,10 +302,7 @@ func CreateGoods(c *gin.Context) {
 
 	fmt.Println(goods)
 
-	// 连接本地 IPFS 节点（默认端口 5001）
-	sh := shell.NewShell("localhost:5001")
-
-	cid, err := uploadProduct(sh, goods)
+	cid, err := uploadProduct(goods)
 	if err != nil {
 		panic(fmt.Sprintf("上传失败: %v", err))
 	}
@@ -341,15 +344,19 @@ func UpdateGoods(c *gin.Context) {
 
 // DeleteGoods 删除货物
 func DeleteGoods(c *gin.Context) {
-	// id := c.Param("id")
+	id := c.Param("id")
 
-	// for i, goods := range goodsList {
-	// 	if goods.ID == id {
-	// 		goodsList = append(goodsList[:i], goodsList[i+1:]...)
-	// 		c.JSON(http.StatusOK, gin.H{"message": "goods deleted"})
-	// 		return
-	// 	}
-	// }
+	delect := ContractCall{
+		Function: "removeProduct(string)",
+		Args:     id,
+	}
+	jsonBytes, _ := json.Marshal(delect)
+	input := string(jsonBytes)
+	fmt.Println(input)
+
+	ContractCalls(MyAccountAddress, ContractAddress, MyPrivateKey, input)
+
+	c.JSON(http.StatusOK, gin.H{"message": "goods deleted"})
 
 	// c.JSON(http.StatusNotFound, gin.H{"error": "goods not found"})
 }
