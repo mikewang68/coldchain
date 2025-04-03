@@ -22,11 +22,6 @@ import (
 
 	shell "github.com/ipfs/go-ipfs-api"
 
-	// "context"
-
-	// "github.com/ipfs/boxo/files" // 统一使用 boxo/files
-	// "github.com/ipfs/boxo/path"
-
 	"github.com/ipfs/go-cid"
 )
 
@@ -253,6 +248,38 @@ func QueryProducts(cidStrs []string) ([]models.Goods, error) {
 	return results, nil
 }
 
+// func GetGoodsList(c *gin.Context) {
+// 	var filter models.GoodsFilter
+// 	if err := c.ShouldBindQuery(&filter); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	cidlist := QuerycontrctGoodslist(MyAccountAddress, ContractAddress)
+
+// 	virtualGoodsList, _ := QueryProducts(cidlist)
+
+// 	// 过滤数据
+// 	filteredList := make([]models.Goods, 0)
+// 	for _, goods := range virtualGoodsList {
+// 		if filter.GoodsID != "" && goods.ID != filter.GoodsID {
+// 			continue
+// 		}
+// 		if filter.Type != "" && goods.Type != string(filter.Type) {
+// 			continue
+// 		}
+// 		if filter.Status != "" && goods.Status != string(filter.Status) {
+// 			continue
+// 		}
+// 		filteredList = append(filteredList, goods)
+// 	}
+
+//		// 返回数据
+//		c.JSON(http.StatusOK, models.GoodsListResponse{
+//			Total: int64(len(filteredList)),
+//			Items: filteredList,
+//		})
+//	}
 func GetGoodsList(c *gin.Context) {
 	var filter models.GoodsFilter
 	if err := c.ShouldBindQuery(&filter); err != nil {
@@ -260,24 +287,46 @@ func GetGoodsList(c *gin.Context) {
 		return
 	}
 
+	// 打印接收到的过滤条件
+	fmt.Printf("Received filter: %+v\n", filter)
+
 	cidlist := QuerycontrctGoodslist(MyAccountAddress, ContractAddress)
 
-	virtualGoodsList, _ := QueryProducts(cidlist)
+	virtualGoodsList, err := QueryProducts(cidlist)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query products"})
+		return
+	}
+
+	// 打印获取到的商品列表
+	fmt.Printf("Total goods before filtering: %d\n", len(virtualGoodsList))
 
 	// 过滤数据
 	filteredList := make([]models.Goods, 0)
 	for _, goods := range virtualGoodsList {
+		// 打印每个商品的过滤条件比较结果
+		fmt.Printf("Comparing goods ID: %s with filter ID: %s\n", goods.ID, filter.GoodsID)
+		fmt.Printf("Comparing goods Type: %s with filter Type: %s\n", goods.Type, filter.Type)
+		fmt.Printf("Comparing goods Status: %s with filter Status: %s\n", goods.Status, filter.Status)
+
+		// 直接比较字符串，不需要类型转换
 		if filter.GoodsID != "" && goods.ID != filter.GoodsID {
+			fmt.Printf("Skipping goods ID: %s (does not match filter)\n", goods.ID)
 			continue
 		}
-		if filter.Type != "" && goods.Type != string(filter.Type) {
+		if filter.Type != "" && goods.Type != filter.Type {
+			fmt.Printf("Skipping goods ID: %s (type does not match filter)\n", goods.ID)
 			continue
 		}
-		if filter.Status != "" && goods.Status != string(filter.Status) {
+		if filter.Status != "" && goods.Status != filter.Status {
+			fmt.Printf("Skipping goods ID: %s (status does not match filter)\n", goods.ID)
 			continue
 		}
 		filteredList = append(filteredList, goods)
 	}
+
+	// 打印过滤后的结果
+	fmt.Printf("Total goods after filtering: %d\n", len(filteredList))
 
 	// 返回数据
 	c.JSON(http.StatusOK, models.GoodsListResponse{
@@ -357,6 +406,7 @@ func DeleteGoods(c *gin.Context) {
 	ContractCalls(MyAccountAddress, ContractAddress, MyPrivateKey, input)
 
 	c.JSON(http.StatusOK, gin.H{"message": "goods deleted"})
+	//没加错误显示之后加
 
 	// c.JSON(http.StatusNotFound, gin.H{"error": "goods not found"})
 }

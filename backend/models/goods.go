@@ -36,9 +36,9 @@ type Goods struct {
 
 // GoodsFilter 货物查询过滤条件
 type GoodsFilter struct {
-	GoodsID string      `json:"goodsId"`
-	Type    GoodsType   `json:"type"`
-	Status  GoodsStatus `json:"status"`
+	GoodsID string `json:"goodsId" form:"goodsId"`
+	Type    string `json:"type" form:"type"`
+	Status  string `json:"status" form:"status"`
 }
 
 // GoodsListResponse 货物列表响应
