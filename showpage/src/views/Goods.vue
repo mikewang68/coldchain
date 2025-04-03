@@ -3,6 +3,7 @@
     <nav-bar></nav-bar>
     <div class="goods-container">
       <el-card>
+        <!-- 查询表单 -->
         <div class="filter-container">
           <el-form :inline="true" :model="filterForm">
             <el-form-item label="批次编号">
@@ -30,54 +31,103 @@
           </el-form>
         </div>
 
+        <!-- 操作按钮 -->
         <div class="operation-container">
           <el-button type="primary" @click="handleAdd">新增入库</el-button>
           <el-button type="warning" @click="handleOut">货物出库</el-button>
         </div>
 
-        <el-table :data="goodsList" border style="width: 100%">
-          <el-table-column prop="goodsId" label="批次编号" width="120"></el-table-column>
-          <el-table-column prop="deviceId" label="设备标识" width="150">
-            <template #default="scope">
-              <el-tag type="info">{{ scope.row.deviceId || '未绑定' }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="name" label="海鲜名称"></el-table-column>
-          <el-table-column prop="type" label="类型" width="100">
-            <template #default="scope">
-              <el-tag>{{ getTypeText(scope.row.type) }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="specification" label="等级" width="150"></el-table-column>
-          <el-table-column prop="size" label="包装" width="100"></el-table-column>
-          <el-table-column prop="weight" label="重量(吨)" width="100"></el-table-column>
-          <el-table-column prop="temperature" label="温度(°C)" width="100"></el-table-column>
-          <el-table-column prop="inTime" label="入库时间" width="180"></el-table-column>
-          <el-table-column prop="status" label="状态" width="100">
-            <template #default="scope">
-              <el-tag :type="getStatusType(scope.row.status)">
-                {{ getStatusText(scope.row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="200">
-            <template #default="scope">
-              <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
-              <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <!-- 数据展示区域 -->
+        <div class="data-display">
+          <!-- 全体数据视图 -->
+          <div v-if="!isFiltered" class="all-items-view">
+            <h3>全部货物列表</h3>
+            <el-table :data="goodsList" border style="width: 100%">
+              <el-table-column prop="goodsId" label="批次编号" width="120"></el-table-column>
+              <el-table-column prop="deviceId" label="设备标识" width="150">
+                <template #default="scope">
+                  <el-tag type="info">{{ scope.row.deviceId || '未绑定' }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="name" label="海鲜名称"></el-table-column>
+              <el-table-column prop="type" label="类型" width="100">
+                <template #default="scope">
+                  <el-tag>{{ getTypeText(scope.row.type) }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="specification" label="等级" width="150"></el-table-column>
+              <el-table-column prop="size" label="包装" width="100"></el-table-column>
+              <el-table-column prop="weight" label="重量(吨)" width="100"></el-table-column>
+              <el-table-column prop="temperature" label="温度(°C)" width="100"></el-table-column>
+              <el-table-column prop="inTime" label="入库时间" width="180"></el-table-column>
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="scope">
+                  <el-tag :type="getStatusType(scope.row.status)">
+                    {{ getStatusText(scope.row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="200">
+                <template #default="scope">
+                  <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
+                  <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
 
-        <div class="pagination-container">
-          <el-pagination
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-            :current-page="currentPage"
-            :page-sizes="[10, 20, 30, 50]"
-            :page-size="pageSize"
-            layout="total, sizes, prev, pager, next, jumper"
-            :total="total">
-          </el-pagination>
+          <!-- 过滤后的数据视图 -->
+          <div v-else class="filtered-items-view">
+            <div class="filter-header">
+              <h3>查询结果</h3>
+              <el-button type="text" @click="showAllItems">返回全部列表</el-button>
+            </div>
+            <el-table :data="goodsList" border style="width: 100%">
+              <el-table-column prop="goodsId" label="批次编号" width="120"></el-table-column>
+              <el-table-column prop="deviceId" label="设备标识" width="150">
+                <template #default="scope">
+                  <el-tag type="info">{{ scope.row.deviceId || '未绑定' }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="name" label="海鲜名称"></el-table-column>
+              <el-table-column prop="type" label="类型" width="100">
+                <template #default="scope">
+                  <el-tag>{{ getTypeText(scope.row.type) }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="specification" label="等级" width="150"></el-table-column>
+              <el-table-column prop="size" label="包装" width="100"></el-table-column>
+              <el-table-column prop="weight" label="重量(吨)" width="100"></el-table-column>
+              <el-table-column prop="temperature" label="温度(°C)" width="100"></el-table-column>
+              <el-table-column prop="inTime" label="入库时间" width="180"></el-table-column>
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="scope">
+                  <el-tag :type="getStatusType(scope.row.status)">
+                    {{ getStatusText(scope.row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="200">
+                <template #default="scope">
+                  <el-button size="mini" @click="handleEdit(scope.row)">编辑</el-button>
+                  <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 分页器 -->
+          <div class="pagination-container">
+            <el-pagination
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              :current-page="currentPage"
+              :page-sizes="[10, 20, 30, 50]"
+              :page-size="pageSize"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="total">
+            </el-pagination>
+          </div>
         </div>
       </el-card>
 
@@ -193,7 +243,8 @@ export default {
       },
       currentPage: 1,
       pageSize: 10,
-      total: 0
+      total: 0,
+      isFiltered: false
     }
   },
   created() {
@@ -202,16 +253,40 @@ export default {
   methods: {
     async fetchGoodsList() {
       try {
+        // 构建查询参数，确保参数名与后端一致
+        const params = {}
+        
+        // 只有当有值时才添加参数，使用与后端匹配的参数名
+        if (this.filterForm.goodsId) {
+          params.goodsId = this.filterForm.goodsId  // 匹配后端的 json:"goodsId"
+        }
+        if (this.filterForm.type) {
+          params.type = this.filterForm.type  // 匹配后端的 json:"type"
+        }
+        if (this.filterForm.status) {
+          params.status = this.filterForm.status  // 匹配后端的 json:"status"
+        }
+        
+        // 打印查询参数和请求URL
+        console.log('Query params:', params)
+        console.log('Request URL:', 'http://localhost:8090/api/goods/list')
+        
         const response = await axios.get('http://localhost:8090/api/goods/list', {
-          params: this.filterForm
+          params: params
         })
+        
+        // 打印响应数据
+        console.log('Response data:', response.data)
+        
         this.goodsList = response.data.items
         this.total = response.data.total
       } catch (error) {
+        console.error('Error fetching goods list:', error)
         this.$message.error('获取货物列表失败')
       }
     },
     handleSearch() {
+      this.isFiltered = true
       this.currentPage = 1
       this.fetchGoodsList()
     },
@@ -221,7 +296,8 @@ export default {
         type: '',
         status: ''
       }
-      this.handleSearch()
+      this.isFiltered = false
+      this.fetchGoodsList()
     },
     handleAdd() {
       this.dialogTitle = '新增入库'
@@ -248,7 +324,8 @@ export default {
           this.$message.success('更新成功')
         }
         this.dialogVisible = false
-        this.fetchGoodsList()
+        // 刷新整个页面
+        window.location.reload()
       } catch (error) {
         this.$message.error(error.response?.data?.error || '操作失败')
       }
@@ -265,7 +342,8 @@ export default {
         })
         await axios.delete(`http://localhost:8090/api/goods/delete/${row.goodsId}`)
         this.$message.success('删除成功')
-        this.fetchGoodsList()
+        // 刷新整个页面
+        window.location.reload()
       } catch (error) {
         if (error !== 'cancel') {
           this.$message.error('删除失败')
@@ -322,6 +400,15 @@ export default {
     scanDeviceId() {
       // 模拟扫描设备ID
       this.goodsForm.deviceId = 'NFC:' + Math.random().toString(16).slice(2, 8).toUpperCase()
+    },
+    showAllItems() {
+      this.isFiltered = false
+      this.filterForm = {
+        goodsId: '',
+        type: '',
+        status: ''
+      }
+      this.fetchGoodsList()
     }
   }
 }
@@ -458,5 +545,26 @@ export default {
 :deep(.el-dialog__body) {
   flex: 1;
   overflow-y: auto;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filter-header h3 {
+  margin: 0;
+  color: #409EFF;
+}
+
+.data-display {
+  margin-top: 20px;
+}
+
+.all-items-view h3 {
+  margin-bottom: 20px;
+  color: #409EFF;
 }
 </style>
